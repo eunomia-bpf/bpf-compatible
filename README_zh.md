@@ -37,3 +37,11 @@
 
 - `script/btfgen`：一个shell脚本，用于从`btfhub-archive`下载BTF存档，以及生成裁剪过的BTF存档
 - `bpf-compatible-rs`: 一个`Rust`库，用以提供解压tar存档的支持，以及选择适合当前内核的`BTF`存档的功能。目前`bpf-loader-rs`和`ecli`基于这个库实现了`tar`存档的加载与运行。
+
+### API的设计
+
+`bpf-compitable-rs`的API主要包含以下两个函数：
+- `fn unpack_tar(tar_data: &[u8]) -> Result<(Vec<u8>, BtfArchive)>`：解压一个tar存档，读取其package.json的内容并返回。如果存档中存在btfhub-archive目录，则会一同返回对应的TempDir对象及btfhub-archive目录。
+- `fn get_current_system_btf_file( archive_path: impl AsRef<Path>) -> Result<PathBuf>`：从给定的btfhub-archive目录中选取适合当前内核的BTF存档。
+
+ 
