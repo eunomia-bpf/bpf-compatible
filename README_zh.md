@@ -40,8 +40,10 @@
 
 ### API的设计
 
-`bpf-compitable-rs`的API主要包含以下两个函数：
-- `fn unpack_tar(tar_data: &[u8]) -> Result<(Vec<u8>, BtfArchive)>`：解压一个tar存档，读取其package.json的内容并返回。如果存档中存在btfhub-archive目录，则会一同返回对应的TempDir对象及btfhub-archive目录。
-- `fn get_current_system_btf_file( archive_path: impl AsRef<Path>) -> Result<PathBuf>`：从给定的btfhub-archive目录中选取适合当前内核的BTF存档。
+`bpf-compitable-rs` 的API主要包含以下两个函数：
+- `fn unpack_tar(tar_data: &[u8]) -> Result<(Vec<u8>, BtfArchive)>`：解压一个`tar`存档，读取其`package.json`的内容并返回。如果存档中存在`btfhub-archive`目录，则会一同返回对应的`TempDir`对象及`btfhub-archive`目录的`PathBuf`。
+- `fn get_current_system_btf_file( archive_path: impl AsRef<Path>) -> Result<PathBuf>`：从给定的`btfhub-archive`目录中选取适合当前内核的`BTF`存档。
 
- 
+`btfgen` 所提供的功能如下：
+- `btfgen fetch`: 从`btfhub-archive`仓库下载`BTF`存档至`~/.cache/eunomia/btfhub`。也可以使用`$BTFHUB_CACHE`来手动指定下载目录
+- `btfgen btfgen [-j JSON_FILE] <BPF>`: 基于`<BPF>`所指定的BPF程序，创建裁剪版的`BTF`存档，并打包成`tar`存档。如果指定了`-j`参数，则会将对应的`package.json`一起打包进去。
