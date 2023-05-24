@@ -62,3 +62,19 @@ MIT
 ## 远期目标
 
 - 实现只裁剪和打包特定内核版本的BTF存档
+- 对旧内核的兼容，即：
+
+一方面，我们需要保证兼容性，这意味着我们可能需要折中一些特性。例如，高版本内核可能支持 ring buffer，而低版本内核只能使用 perf event。我们需要设计一个能够在两种环境中都能工作的解决方案，例如使用一种 bpf buffer 作为抽象，例如：
+
+https://github.com/iovisor/bcc/blob/master/libbpf-tools/compat.h
+
+```c
+typedef int (*bpf_buffer_sample_fn)(void *ctx, void *data, size_t size);
+typedef void (*bpf_buffer_lost_fn)(void *ctx, int cpu, __u64 cnt);
+
+struct bpf_buffer *bpf_buffer__new(struct bpf_map *events, struct bpf_map *heap);
+int bpf_buffer__open(struct bpf_buffer *buffer, bpf_buffer_sample_fn sample_cb,
+		     bpf_buffer_lost_fn lost_cb, void *ctx);
+int bpf_buffer__poll(struct bpf_buffer *, int timeout_ms);
+void bpf_buffer__free(struct bpf_buffer *);
+```
