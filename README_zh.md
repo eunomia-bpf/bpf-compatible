@@ -15,7 +15,7 @@
 ### Tar的结构
 
 ```plain
-|- package.json
+|- package.json <eBPF程序本身>
 |- btfhub-archive
 |- ---- ubuntu <ID in os-release>
 |- ---- ---- 22.04 <VERSION in os-release>
@@ -51,6 +51,9 @@
 ## 流程图
 
 ![flow](doc/image/flow.png)
+
+![flow-dev](doc/image/flow-dev.png)
+
 
 ## 协议
 
