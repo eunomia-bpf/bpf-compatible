@@ -59,9 +59,15 @@
 
 MIT
 
-## 远期目标
 
-- 对旧内核的兼容，即：
+## 近期目标 / Roadmap
+- 实现只裁剪和打包特定内核版本的BTF存档
+- 提供一个 example 
+- 在 rust 之上提供一个 c header wrapper
+- 提供一些兼容性相关的 API，包含 bpf buffer 等
+- 发布二进制库和 c 头文件
+
+### 对旧内核的兼容 - 细节
 
 一方面，我们需要保证兼容性，这意味着我们可能需要折中一些特性。例如，高版本内核可能支持 ring buffer，而低版本内核只能使用 perf event。我们需要设计一个能够在两种环境中都能工作的解决方案，例如使用一种 bpf buffer 作为抽象，例如：
 
@@ -77,10 +83,3 @@ int bpf_buffer__open(struct bpf_buffer *buffer, bpf_buffer_sample_fn sample_cb,
 int bpf_buffer__poll(struct bpf_buffer *, int timeout_ms);
 void bpf_buffer__free(struct bpf_buffer *);
 ```
-
-## 近期目标 / TODO
-- 实现只裁剪和打包特定内核版本的BTF存档
-- 提供一个 example
-- 在 rust 之上提供一个 c header wrapper
-- 提供一些兼容性相关的 API，包含 bpf buffer 等
-- 发布二进制库和 c 头文件
