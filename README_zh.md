@@ -47,3 +47,15 @@
 `btfgen` 所提供的功能如下：
 - `btfgen fetch`: 从`btfhub-archive`仓库下载`BTF`存档至`~/.cache/eunomia/btfhub`。也可以使用`$BTFHUB_CACHE`来手动指定下载目录
 - `btfgen btfgen [-j JSON_FILE] <BPF>`: 基于`<BPF>`所指定的BPF程序，创建裁剪版的`BTF`存档，并打包成`tar`存档。如果指定了`-j`参数，则会将对应的`package.json`一起打包进去。
+
+## 流程图
+
+![flow](doc/image/flow.png)
+
+## 协议
+
+MIT
+
+## 远期目标
+
+- 实现只裁剪和打包特定内核版本的BTF存档
