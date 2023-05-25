@@ -15,7 +15,7 @@ pub fn get_current_system_btf_file(archive_path: impl AsRef<Path>) -> Result<Pat
     let uname = uname_rs::Uname::new().map_err(Error::UnameError)?;
     let btf_path = format!(
         "{}/{}/{}/{}.btf",
-        release_info.id, release_info.version, uname.machine, uname.release
+        release_info.id, release_info.version_id, uname.machine, uname.release
     );
     Ok(archive_path.as_ref().join(btf_path))
 }
