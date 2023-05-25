@@ -2,7 +2,7 @@
 
 script_name=${0##*/}
 BTFHUB_CACHE_DIR="${BTFHUB_CACHE:-$HOME/.cache/eunomia/btfhub}"
-
+BTFHUB_REPO_URL="${BTFHUB_REPO:-https://github.com/aquasecurity/btfhub-archive}"
 usage() {
 	cat <<-EOF
 	Usage:
@@ -30,7 +30,7 @@ fetch() {
   fi
 
   mkdir -p $(dirname ${BTFHUB_CACHE_DIR})
-  git clone --depth 1 https://github.com/aquasecurity/btfhub-archive ${BTFHUB_CACHE_DIR}
+  git clone --depth 1 ${BTFHUB_REPO_URL} ${BTFHUB_CACHE_DIR}
 }
 
 btfgen() {
