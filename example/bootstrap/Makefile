@@ -29,3 +29,4 @@ clean:
 	$(DEL) *.json
 	$(DEL) btfhub-cache
 	$(DEL) output.tar.gz
+	$(DEL) bootstrap.tar
