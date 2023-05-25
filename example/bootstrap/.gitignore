@@ -2,3 +2,4 @@
 *.json
 btfhub-cache
 output.tar.gz
+bootstrap.tar

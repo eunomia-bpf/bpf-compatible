@@ -10,11 +10,22 @@ btfhub-cache:
 	BTFHUB_CACHE=./btfhub-cache \
 	../../script/btfgen fetch
 
-bootstrap.tar: btfhub-cache package.json
+output.tar.gz: btfhub-cache package.json
 	BTFHUB_CACHE=./btfhub-cache \
 	../../script/btfgen btfgen -j package.json bootstrap.bpf.o
+
+bootstrap.tar: output.tar.gz
+	gzip -d output.tar.gz
+	mv output.tar bootstrap.tar
+
+ecli-rs:
+	cargo install ecli-rs
+
+run: bootstrap.tar ecli-rs
+	ecli-rs run bootstrap.tar
 
 clean:
 	$(DEL) *.o
 	$(DEL) *.json
 	$(DEL) btfhub-cache
+	$(DEL) output.tar.gz
