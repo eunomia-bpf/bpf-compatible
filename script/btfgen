@@ -19,6 +19,7 @@ usage() {
 	Options:
 	  btfgen options:
       -j, --json JSON_FILE  compress tar.gz with package.json
+      -o, --output OUTPUT_PATH output tar file path
 	EOF
 }
 
@@ -29,30 +30,34 @@ fetch() {
     return
   fi
 
-  mkdir -p $(dirname ${BTFHUB_CACHE_DIR})
-  git clone --depth 1 ${BTFHUB_REPO_URL} ${BTFHUB_CACHE_DIR}
+  mkdir -p ${BTFHUB_CACHE_DIR}
+  git clone --depth 1 ${BTFHUB_REPO_URL} ${BTFHUB_CACHE_DIR}/btfhub-archive
 }
 
 btfgen() {
   fetch
   if ! command -v bpftool &> /dev/null; then echo "Error: bpftool is not installed."; exit 1; fi
-  short_args="j:f"
-	long_args="json:,file:"
+  short_args="j:f:o:"
+	long_args="json:,file:,output:"
 	TEMP=$(getopt -o "$short_args" --long "$long_args" -n "$script_name" -- "$@") \
 		|| return 1
 	eval set -- "$TEMP";
 
-	local json file
+	local json file output
 	while [[ ${1:0:1} == - ]]; do
 		[[ $1 =~ ^-f|--|--file$ ]] && {
 			shift 1;
 			if [ -n "$1" ]; then file="$1"; shift 1; continue; fi
 		};
 		[[ $1 =~ ^-j|--json$ ]]    && { json="$2"; shift 2; continue; };
+		[[ $1 =~ ^-o|--output$ ]]    && { output="$2"; shift 2; continue; };
 		break;
 	done
 
+  if [ -z "$output" ]; then output="output.tar"; fi
+ 
   dir=$(pwd)
+
   find $BTFHUB_CACHE_DIR -name "*.tar.xz" | \
   xargs -P 8 -I fileName sh -c 'tar xfJ "fileName" -C "$(dirname "fileName")"'
   find $BTFHUB_CACHE_DIR -name "*.btf" | \
@@ -60,7 +65,13 @@ btfgen() {
 
   if [ -n "$json" ]; then cp $json $BTFHUB_CACHE_DIR; fi
 
-  cd $BTFHUB_CACHE_DIR && tar --exclude="./LICENSE" --exclude="./README.md" --exclude="./.gitignore" --exclude="./.git" --exclude="*.xz" -czf $dir/output.tar.gz .
+  cd $BTFHUB_CACHE_DIR && tar \
+    --exclude="./btfhub-archive/LICENSE" \
+    --exclude="./btfhub-archive/README.md" \
+    --exclude="./btfhub-archive/.gitignore" \
+    --exclude="./btfhub-archive/.git" \
+    --exclude="*.xz" \
+    -czf $dir/$output .
 }
 
 main() {
