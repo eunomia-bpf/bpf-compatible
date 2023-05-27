@@ -54,6 +54,12 @@
 - `const char* get_btf_path(struct btf_context* ctx)`: 从`ctx`中获取已经解压好的当前内核所使用的BTF的路径。此函数总是成功。
 - `int clean_core_btf(struct btf_context* ctx)`: 清理临时文件。用户总应该在程序结束前调用此函数清理创建好的`btf_context`
 
+此外，为了便于C程序使用`bpf-compatible-sys`，我们同样需要一个头文件`btf_core.h`，其中包括：
+- `bpf-compatible-sys`提供的C函数的原型
+- `int ensure_core_btf(struct btf_context* ctx, struct bpf_object_open_opts *opts)`：使用`btf_context`提供的路径信息填充`opts`中的`btf_custom_path`。此函数尽可能保证了与`bcc`中的[ensure_core_btf](https://github.com/iovisor/bcc/blob/046eea8f64f3dd7bf3a706fabadd8a66eeebb728/libbpf-tools/btf_helpers.c#L165)相同的语义。
+
+此外，为了实现`ensure_core_btf`函数，`btf_core.h`需要包含`libbpf`中的`libbpf.h`
+
 ## 流程图
 
 ![flow](doc/image/flow.png)
