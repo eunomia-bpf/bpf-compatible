@@ -15,6 +15,13 @@ static int ensure_core_btf(struct bpf_object_open_opts* opts) {
     return ensure_core_btf_with_linked_tar(&opts->btf_custom_path);
 }
 
+static int ensure_core_btf_tar(struct bpf_object_open_opts* opts,
+                               const char* tar_bin,
+                               int tar_len) {
+    return ensure_core_btf_with_tar_binary(&opts->btf_custom_path, tar_bin,
+                                           tar_len);
+}
+
 static void cleanup_core_btf(struct bpf_object_open_opts* opts) {
     clean_core_btf_rs(opts->btf_custom_path);
 }
