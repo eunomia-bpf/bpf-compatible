@@ -6,6 +6,7 @@ use std::{
 };
 
 use bpf_compatible_rs::{generate_current_system_btf_archive_path, tar::Archive};
+use flate2::read::GzDecoder;
 use libc::{c_void, malloc, EILSEQ, EINVAL, EIO, ENOENT, ENOMEM};
 
 #[no_mangle]
@@ -15,14 +16,8 @@ pub extern "C" fn ensure_core_btf_with_tar_binary(
     tar_len: c_int,
 ) -> c_int {
     let tar_bytes = unsafe { slice::from_raw_parts(tar_bin, tar_len as usize) };
-    let tar_bytes = match inflate::inflate_bytes_zlib(tar_bytes) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("Failed to decompress the gzip-ed tar: {}", e);
-            return -EINVAL;
-        }
-    };
-    let mut tar = Archive::new(&tar_bytes[..]);
+    let gzip_reader  = GzDecoder::new(tar_bytes);
+    let mut tar = Archive::new(gzip_reader);
     let local_btf_path =
         PathBuf::from("./btfhub-archive").join(match generate_current_system_btf_archive_path() {
             Ok(v) => v,
@@ -95,18 +90,18 @@ pub extern "C" fn ensure_core_btf_with_tar_binary(
 }
 
 extern "C" {
-    static _binary_min_core_btfs_tar_gz_start: *const c_char;
-    static _binary_min_core_btfs_tar_gz_end: *const c_char;
+    static _binary_min_core_btfs_tar_gz_start: c_char;
+    static _binary_min_core_btfs_tar_gz_end: c_char;
 }
 
 #[no_mangle]
 pub extern "C" fn ensure_core_btf_with_linked_tar(path: *mut *const c_char) -> c_int {
     let len = unsafe {
-        _binary_min_core_btfs_tar_gz_end as usize - _binary_min_core_btfs_tar_gz_start as usize
+        &_binary_min_core_btfs_tar_gz_end as *const c_char as usize - &_binary_min_core_btfs_tar_gz_start as *const c_char as usize
     };
     ensure_core_btf_with_tar_binary(
         path,
-        unsafe { _binary_min_core_btfs_tar_gz_start } as *const u8,
+        unsafe { &_binary_min_core_btfs_tar_gz_start as *const c_char } as *const u8,
         len as c_int,
     )
 }

@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 bpf-compatible-rs = { path = "../bpf-compatible-rs", version = "0.1.3" }
-inflate = "0.4.5"
+flate2 = "1.0.26"
 libc = "0.2.144"
 mkstemp-rs = "1.0.0"
 
