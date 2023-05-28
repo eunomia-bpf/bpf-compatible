@@ -15,12 +15,17 @@ use bpf_compatible_rs::{generate_current_system_btf_archive_path, tar::Archive};
 use flate2::read::GzDecoder;
 use libc::{c_void, malloc, EILSEQ, EINVAL, EIO, ENOENT, ENOMEM};
 
+const VMLINUX_BTF_PATH: &str = "/sys/kernel/btf/vmlinux";
+
 #[no_mangle]
 pub extern "C" fn ensure_core_btf_with_tar_binary(
     path: *mut *const c_char,
     tar_bin: *const u8,
     tar_len: c_int,
 ) -> c_int {
+    if PathBuf::from(VMLINUX_BTF_PATH).exists() {
+        return 0;
+    }
     let tar_bytes = unsafe { slice::from_raw_parts(tar_bin, tar_len as usize) };
     let decompressed_bytes = {
         let mut val = vec![];
@@ -124,6 +129,9 @@ pub extern "C" fn ensure_core_btf_with_linked_tar(path: *mut *const c_char) -> c
 
 #[no_mangle]
 pub extern "C" fn clean_core_btf_rs(path: *mut c_char) {
+    if path.is_null() {
+        return;
+    }
     let path_buf = PathBuf::from(
         unsafe { CStr::from_ptr(path) }
             .to_string_lossy()
