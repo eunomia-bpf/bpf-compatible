@@ -1,6 +1,6 @@
 use std::{
     ffi::{c_char, c_int},
-    io::Write,
+    io::{Read, Write},
     path::PathBuf,
     slice,
 };
@@ -16,8 +16,17 @@ pub extern "C" fn ensure_core_btf_with_tar_binary(
     tar_len: c_int,
 ) -> c_int {
     let tar_bytes = unsafe { slice::from_raw_parts(tar_bin, tar_len as usize) };
-    let gzip_reader  = GzDecoder::new(tar_bytes);
-    let mut tar = Archive::new(gzip_reader);
+    let decompressed_bytes = {
+        let mut val = vec![];
+        let mut gzip_reader = GzDecoder::new(tar_bytes);
+        if let Err(e) = gzip_reader.read_to_end(&mut val) {
+            eprintln!("Failed to decompress: {}", e);
+            return -EINVAL;
+        }
+        val
+    };
+
+    let mut tar = Archive::new(&decompressed_bytes[..]);
     let local_btf_path =
         PathBuf::from("./btfhub-archive").join(match generate_current_system_btf_archive_path() {
             Ok(v) => v,
@@ -58,7 +67,7 @@ pub extern "C" fn ensure_core_btf_with_tar_binary(
                     return -EIO;
                 }
             };
-            let file_bytes = &tar_bytes[entry.raw_file_position() as usize
+            let file_bytes = &decompressed_bytes[entry.raw_file_position() as usize
                 ..(entry.raw_file_position() + entry.size()) as usize];
             if let Err(e) = temp_file.write_all(file_bytes) {
                 eprintln!("Failed to write btf things to the tempfile: {}", e);
@@ -97,7 +106,8 @@ extern "C" {
 #[no_mangle]
 pub extern "C" fn ensure_core_btf_with_linked_tar(path: *mut *const c_char) -> c_int {
     let len = unsafe {
-        &_binary_min_core_btfs_tar_gz_end as *const c_char as usize - &_binary_min_core_btfs_tar_gz_start as *const c_char as usize
+        &_binary_min_core_btfs_tar_gz_end as *const c_char as usize
+            - &_binary_min_core_btfs_tar_gz_start as *const c_char as usize
     };
     ensure_core_btf_with_tar_binary(
         path,
