@@ -11,14 +11,15 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub mod error;
 
 /// Generate the btf archive path of the running kernel
-pub fn generate_current_system_btf_archive_path() -> Result<PathBuf> {
+/// It returns somethings like `ubuntu/20.04/x86_64/xxxxxxx.btf`
+pub fn generate_current_system_btf_archive_path() -> Result<String> {
     let release_info = os_release::OsRelease::new().map_err(Error::OsReleaseError)?;
     let uname = uname_rs::Uname::new().map_err(Error::UnameError)?;
     let btf_path = format!(
         "{}/{}/{}/{}.btf",
         release_info.id, release_info.version_id, uname.machine, uname.release
     );
-    Ok(PathBuf::from(btf_path))
+    Ok(btf_path)
 }
 
 /// Try to get the btf file of the running system under the archive directory
