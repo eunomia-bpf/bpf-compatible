@@ -3,21 +3,29 @@ use std::path::{Path, PathBuf};
 pub use crate::error::Error;
 use tar::Archive;
 pub use tempfile;
+pub use tar;
 use tempfile::{tempdir, TempDir};
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Errors of this library
 pub mod error;
 
-/// Try to get the btf file of the running system under the archive directory
-pub fn get_current_system_btf_file(archive_path: impl AsRef<Path>) -> Result<PathBuf> {
+/// Generate the btf archive path of the running kernel
+pub fn generate_current_system_btf_archive_path() -> Result<PathBuf> {
     let release_info = os_release::OsRelease::new().map_err(Error::OsReleaseError)?;
     let uname = uname_rs::Uname::new().map_err(Error::UnameError)?;
     let btf_path = format!(
         "{}/{}/{}/{}.btf",
         release_info.id, release_info.version_id, uname.machine, uname.release
     );
-    Ok(archive_path.as_ref().join(btf_path))
+    Ok(PathBuf::from(btf_path))
+}
+
+/// Try to get the btf file of the running system under the archive directory
+pub fn get_current_system_btf_file(archive_path: impl AsRef<Path>) -> Result<PathBuf> {
+    Ok(archive_path
+        .as_ref()
+        .join(generate_current_system_btf_archive_path()?))
 }
 /// A helper type definition for simplicity
 pub type BtfArchive = Option<(PathBuf, TempDir)>;
