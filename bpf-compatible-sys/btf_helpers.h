@@ -4,7 +4,7 @@
 #include <bpf/libbpf.h>
 
 int ensure_core_btf_with_tar_binary(const char** path,
-                                    char* tar_bin,
+                                    const char* tar_bin,
                                     int tar_len);
 
 int ensure_core_btf_with_linked_tar(const char** path);
