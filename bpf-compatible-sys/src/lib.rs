@@ -1,3 +1,9 @@
+//!  SPDX-License-Identifier: MIT
+//!
+//! Copyright (c) 2023, eunomia-bpf
+//! All rights reserved.
+//!
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
 use std::{
     ffi::{c_char, c_int},
     io::{Read, Write},
