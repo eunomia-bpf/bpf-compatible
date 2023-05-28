@@ -5,7 +5,7 @@
 //!
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 use std::{
-    ffi::{c_char, c_int},
+    ffi::{c_char, c_int, CStr},
     io::{Read, Write},
     path::PathBuf,
     slice,
@@ -124,5 +124,13 @@ pub extern "C" fn ensure_core_btf_with_linked_tar(path: *mut *const c_char) -> c
 
 #[no_mangle]
 pub extern "C" fn clean_core_btf_rs(path: *mut c_char) {
+    let path_buf = PathBuf::from(
+        unsafe { CStr::from_ptr(path) }
+            .to_string_lossy()
+            .to_string(),
+    );
+    if let Err(e) = std::fs::remove_file(path_buf) {
+        eprintln!("Failed to perform clean: {}", e);
+    }
     unsafe { libc::free(path as *mut c_void) };
 }
