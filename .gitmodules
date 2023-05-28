@@ -1,0 +1,9 @@
+[submodule "example-core/libbpf"]
+	path = example-core/libbpf
+	url = https://github.com/libbpf/libbpf.git
+[submodule "example-core/bpftool"]
+	path = example-core/bpftool
+	url = https://github.com/libbpf/bpftool
+[submodule "example-core/blazesym"]
+	path = example-core/blazesym
+	url = https://github.com/libbpf/blazesym.git
