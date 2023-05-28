@@ -1,0 +1,117 @@
+use std::{
+    ffi::{c_char, c_int},
+    io::Write,
+    path::PathBuf,
+    slice,
+};
+
+use bpf_compatible_rs::{generate_current_system_btf_archive_path, tar::Archive};
+use libc::{c_void, malloc, EILSEQ, EINVAL, EIO, ENOENT, ENOMEM};
+
+#[no_mangle]
+pub extern "C" fn ensure_core_btf_with_tar_binary(
+    path: *mut *const c_char,
+    tar_bin: *const u8,
+    tar_len: c_int,
+) -> c_int {
+    let tar_bytes = unsafe { slice::from_raw_parts(tar_bin, tar_len as usize) };
+    let tar_bytes = match inflate::inflate_bytes_zlib(tar_bytes) {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Failed to decompress the gzip-ed tar: {}", e);
+            return -EINVAL;
+        }
+    };
+    let mut tar = Archive::new(&tar_bytes[..]);
+    let local_btf_path =
+        PathBuf::from("./btfhub-archive").join(match generate_current_system_btf_archive_path() {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Failed to generate running kernel btf path: {:?}", e);
+                return -ENOENT;
+            }
+        });
+    let entries = match tar.entries() {
+        Ok(v) => v,
+        Err(e) => {
+            eprintln!("Failed to read entries in the tar: {}", e);
+            return -EINVAL;
+        }
+    };
+    let mut btf_path = None;
+    for entry in entries {
+        let entry = match entry {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Failed to read entry: {}", e);
+                return -EIO;
+            }
+        };
+        // path of a entry looks like `./btfhub-archive/ubuntu/20.04/x86_64/5.4.0-40-generic.btf`
+        let path = match entry.header().path() {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Failed to read path name: {}", e);
+                return -EILSEQ;
+            }
+        };
+        if path == local_btf_path {
+            let mut temp_file = match mkstemp::TempFile::new("/tmp/eunomia.btf.XXXXXX", false) {
+                Ok(v) => v,
+                Err(e) => {
+                    eprintln!("Failed to create a tempfile to store the btf: {}", e);
+                    return -EIO;
+                }
+            };
+            let file_bytes = &tar_bytes[entry.raw_file_position() as usize
+                ..(entry.raw_file_position() + entry.size()) as usize];
+            if let Err(e) = temp_file.write_all(file_bytes) {
+                eprintln!("Failed to write btf things to the tempfile: {}", e);
+                return -EIO;
+            }
+            btf_path = Some(temp_file.path().to_string());
+        }
+    }
+    let btf_path = match btf_path {
+        Some(v) => v,
+        None => {
+            eprintln!("Failed to find the btf archive matching the running kernel");
+            return -ENOENT;
+        }
+    };
+    let btf_path_bytes = btf_path.as_bytes();
+    // The buffer will be passed to C program, so allocate it with malloc
+    let holder = unsafe { malloc(btf_path_bytes.len() + 1) } as *mut u8;
+    if holder.is_null() {
+        eprintln!("Unable to allocate a buffer for c string");
+        return -ENOMEM;
+    }
+    let holder_slice = unsafe { slice::from_raw_parts_mut(holder, btf_path_bytes.len() + 1) };
+    holder_slice[..btf_path_bytes.len()].copy_from_slice(btf_path_bytes);
+    // C-Strings require a trailing zero
+    holder_slice[btf_path_bytes.len()] = 0;
+    *unsafe { &mut *path } = holder as *const c_char;
+    0
+}
+
+extern "C" {
+    static _binary_min_core_btfs_tar_gz_start: *const c_char;
+    static _binary_min_core_btfs_tar_gz_end: *const c_char;
+}
+
+#[no_mangle]
+pub extern "C" fn ensure_core_btf_with_linked_tar(path: *mut *const c_char) -> c_int {
+    let len = unsafe {
+        _binary_min_core_btfs_tar_gz_end as usize - _binary_min_core_btfs_tar_gz_start as usize
+    };
+    ensure_core_btf_with_tar_binary(
+        path,
+        unsafe { _binary_min_core_btfs_tar_gz_start } as *const u8,
+        len as c_int,
+    )
+}
+
+#[no_mangle]
+pub extern "C" fn clean_core_btf_rs(path: *mut c_char) {
+    unsafe { libc::free(path as *mut c_void) };
+}
