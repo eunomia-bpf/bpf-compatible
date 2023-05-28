@@ -112,7 +112,7 @@ $(patsubst %,$(OUTPUT)/%.o,$(APPS)): %.o: %.skel.h
 
 $(OUTPUT)/%.o: %.c $(wildcard %.h) | $(OUTPUT)
 	$(call msg,CC,$@)
-	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@
+	$(Q)$(CC) $(CFLAGS) $(INCLUDES) -c $(filter %.c,$^) -o $@ -static
 
 $(patsubst %,$(OUTPUT)/%.o,$(BZS_APPS)): $(LIBBLAZESYM_OBJ)
 
@@ -124,7 +124,7 @@ $(APPS): %: $(OUTPUT)/%.o $(OUTPUT)/%-btf.tar.gz $(LIBBPF_OBJ) $(OUTPUT)/libbpf_
 	$(call msg,LD,$(OUTPUT)/min_core_btf_tar.o)
 	cd $(OUTPUT) && ld -r -b binary min_core_btfs.tar.gz -o min_core_btf_tar.o
 	$(call msg,BINARY,$@)
-	$(Q)$(CC) $(CFLAGS) $< $(LIBBPF_OBJ) $(OUTPUT)/libbpf_compatible.a $(OUTPUT)/min_core_btf_tar.o $(ALL_LDFLAGS) -lelf -lz -o $@
+	$(Q)$(CC) $(CFLAGS) $< $(LIBBPF_OBJ) $(OUTPUT)/libbpf_compatible.a $(OUTPUT)/min_core_btf_tar.o $(ALL_LDFLAGS) -lelf -lz -o $@ -static
 
 $(OUTPUT)/libbpf_compatible.a:
 	make -C ../../bpf-compatible-sys
