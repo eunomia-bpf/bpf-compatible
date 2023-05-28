@@ -49,16 +49,19 @@
 - `btfgen btfgen [-j JSON_FILE] <BPF>`: 基于`<BPF>`所指定的BPF程序，创建裁剪版的`BTF`存档，并打包成`tar`存档。如果指定了`-j`参数，则会将对应的`package.json`一起打包进去。
 
 `bpf-compatible-sys` 是一个用于链接到原有的`libbpf`程序上的适配`bpf-compatible-rs`的接口库，其API包括：
-- `int ensure_core_btf_with_linked_tar(struct btf_context** ctx)`: 使用程序内弱符号`_binary_min_core_btfs_tar_gz_start`和`_binary_min_core_btfs_tar_gz_end`所指明的字节范围作为tar文件的binary，从中读取当前内核的BTF存档，并在获取成功的情况下将其存储到`*ctx`中。在无法从程序内链接的`tar`中获取当前内核的BTF的情况下，返回对应的errno。
-- `int ensure_core_btf_with_tar_binary(struct btf_context** ctx, const char* tar_bin, int tar_len)`: 与`ensure_core_btf_with_linked_tar`类似，但是使用参数提供的`tar_binary`
-- `const char* get_btf_path(struct btf_context* ctx)`: 从`ctx`中获取已经解压好的当前内核所使用的BTF的路径。此函数总是成功。
-- `int clean_core_btf(struct btf_context* ctx)`: 清理临时文件。用户总应该在程序结束前调用此函数清理创建好的`btf_context`
+- `int ensure_core_btf_with_linked_tar(char** path)`: 使用程序内弱符号`_binary_min_core_btfs_tar_gz_start`和`_binary_min_core_btfs_tar_gz_end`所指明的字节范围作为tar文件的binary，从中读取当前内核的BTF存档，并在获取成功的情况下将生成的临时文件的路径存储在`path`中。在无法从程序内链接的`tar`中获取当前内核的BTF的情况下，返回对应的errno。
+- `int ensure_core_btf_with_tar_binary(char** path, const char* tar_bin, int tar_len)`: 与`ensure_core_btf_with_linked_tar`类似，但是使用参数提供的`tar_binary`
+- `int clean_core_btf_rs(char* path)`: 清理临时文件。用户总应该在程序结束前调用此函数清理创建的临时文件
 
-此外，为了便于C程序使用`bpf-compatible-sys`，我们同样需要一个头文件`btf_core.h`，其中包括：
+此外，为了便于C程序使用`bpf-compatible-sys`，我们同样需要一个头文件`btf_core.h`。在将`btf-compatible`应用在原有的`libbpf`程序时，用户总应优先考虑此头文件中所定义的函数。这个头文件中包括：
 - `bpf-compatible-sys`提供的C函数的原型
-- `int ensure_core_btf(struct btf_context* ctx, struct bpf_object_open_opts *opts)`：使用`btf_context`提供的路径信息填充`opts`中的`btf_custom_path`。此函数尽可能保证了与`bcc`中的[ensure_core_btf](https://github.com/iovisor/bcc/blob/046eea8f64f3dd7bf3a706fabadd8a66eeebb728/libbpf-tools/btf_helpers.c#L165)相同的语义。
+- `int ensure_core_btf(struct bpf_object_open_opts *opts)`：使用`btf_context`提供的路径信息填充`opts`中的`btf_custom_path`。此函数尽可能保证了与`bcc`中的[ensure_core_btf](https://github.com/iovisor/bcc/blob/046eea8f64f3dd7bf3a706fabadd8a66eeebb728/libbpf-tools/btf_helpers.c#L165)相同的语义。此函数会调用`ensure_core_btf_with_linked_tar`来实现。
+- `int ensure_core_btf_with_tar_binary(struct bpf_object_open_opts *opts, const char* tar_bin, int tar_len)`：与`ensure_core_btf`类似，但是使用参数传入的tar存档。
+- `int clean_core_btf(struct bpf_object_open_opts *opts)`: 清理临时文件。用户总应在程序结束前调用此函数进行清理。
 
-此外，为了实现`ensure_core_btf`函数，`btf_core.h`需要包含`libbpf`中的`libbpf.h`
+此外，为了实现`ensure_core_btf`函数，`btf_core.h`需要包含`libbpf`中的`libbpf.h`。
+
+在应用于`libbpf`程序时，用户可以优先考虑`ensure_core_btf`与`clean_core_btf`。这两个函数提供了与bcc`btf_helper`完全相同的语义。
 
 ## 流程图
 
