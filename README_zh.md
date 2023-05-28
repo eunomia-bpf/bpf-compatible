@@ -57,7 +57,7 @@
 - `bpf-compatible-sys`提供的C函数的原型
 - `int ensure_core_btf(struct bpf_object_open_opts *opts)`：使用`btf_context`提供的路径信息填充`opts`中的`btf_custom_path`。此函数尽可能保证了与`bcc`中的[ensure_core_btf](https://github.com/iovisor/bcc/blob/046eea8f64f3dd7bf3a706fabadd8a66eeebb728/libbpf-tools/btf_helpers.c#L165)相同的语义。此函数会调用`ensure_core_btf_with_linked_tar`来实现。
 - `int ensure_core_btf_with_tar_binary(struct bpf_object_open_opts *opts, const char* tar_bin, int tar_len)`：与`ensure_core_btf`类似，但是使用参数传入的tar存档。
-- `int clean_core_btf(struct bpf_object_open_opts *opts)`: 清理临时文件。用户总应在程序结束前调用此函数进行清理。
+- `void clean_core_btf(struct bpf_object_open_opts *opts)`: 清理临时文件。用户总应在程序结束前调用此函数进行清理。
 
 此外，为了实现`ensure_core_btf`函数，`btf_core.h`需要包含`libbpf`中的`libbpf.h`。
 
