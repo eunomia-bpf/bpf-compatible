@@ -1,6 +1,6 @@
 # bpf-compatible examples
 
-Here is the root of the examples about bpf-compatible. The sources of the bpf programs are listed in the folder `examples`.
+Here is the root of the examples about bpf-compatible. The sources of the bpf programs are listed in the folder `c`.
 Other folders (e.g, libbpf, or bpftool) are auxiliary projects which are used to build eBPF program.
 
 ## Details
@@ -13,7 +13,7 @@ Currently I only provided two examples:
 - `execsnoop`: Monitoring the exec of processes, and pass the data to the userspace program through `perf event`
 ## Usage
 
-- Run `make bootstrap` or `execsnoop` in the `examples` folder to build the executable
+- Run `make bootstrap` or `execsnoop` in the `c` folder to build the executable
 - Run the generated executable on the target machine to see the output
 
 If the target machine has its kerne listed on  [this repo](https://github.com/eunomia-bpf/btfhub-archive), the executable should be successfully executed. Otherwise, it will fail to start.

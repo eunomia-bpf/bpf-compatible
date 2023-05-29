@@ -82,6 +82,6 @@ It can be directly done by calling `clang <your_program> libbpf_compatible.a min
 ## Usage - more simply
 
 We have adapted the `libbpf-bootstrap` to the `bpf-compatible` toolchain. So there is a more simpler way:
-- Put your `xxx.c` (userspace space program) and `xxx.bpf.c`(kernel program) in the `example/examples` folder, or directly modify an exist one
-- Add the name (`xxx` in the last row) to line 27 of `example/examples/Makefile`, e.g `APPS = bootstrap execsnoop xxx`
-- Run `make xxx` in `example/examples`
+- Put your `xxx.c` (userspace space program) and `xxx.bpf.c`(kernel program) in the `example/c` folder, or directly modify an exist one
+- Add the name (`xxx` in the last row) to line 27 of `example/c/Makefile`, e.g `APPS = bootstrap execsnoop xxx`
+- Run `make xxx` in `example/cs`
