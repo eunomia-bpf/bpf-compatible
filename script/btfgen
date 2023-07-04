@@ -13,8 +13,10 @@ usage() {
       Create reduced version of BTF files to be embedded within the tools executables
 
 	  ${script_name} [fetch]
-      fetch btfhub-archive from github and save to DIR
+      fetch btfhub-archive from REPO and save to DIR
       DIR default is "${HOME}/.cache/eunomia/btfhub" or you can set "\$BTFHUB_CACHE" to override
+      REPO default is "https://github.com/aquasecurity/btfhub-archive" or you can set "\$BTFHUB_REPO"
+      to override; multiple repositories are separated by commas (,)
 
 	Options:
 	  btfgen options:
@@ -24,14 +26,27 @@ usage() {
 }
 
 fetch() {
-  if ! command -v git &> /dev/null; then echo "Error: git is not installed."; exit 1; fi
   if [ -d "$BTFHUB_CACHE_DIR" ]; then
     echo "BTFHUB_CACHE_DIR does exist, skip fetch"
     return
   fi
 
-  mkdir -p ${BTFHUB_CACHE_DIR}
-  git clone --depth 1 ${BTFHUB_REPO_URL} ${BTFHUB_CACHE_DIR}/btfhub-archive
+  if ! command -v git &> /dev/null; then echo "Error: git is not installed."; exit 1; fi
+  if ! command -v rsync &> /dev/null; then echo "Error: rsync is not installed."; exit 1; fi
+  
+  local repos repo repo_dir
+  IFS=',' read -r -a repos <<< "$BTFHUB_REPO_URL"
+  for repo in "${repos[@]}"; do
+    repo_dir="$BTFHUB_CACHE_DIR/btfhub-archive-repos/${repo//[^A-Za-z0-9._-]/_}/"
+    mkdir -p "$repo_dir"
+    git clone --depth 1 "$repo" "$repo_dir"
+    rsync -av --quiet --ignore-existing \
+      --exclude 'LICENSE' \
+      --exclude 'README.md' \
+      --exclude '.gitignore' \
+      --exclude '.git' \
+      "$repo_dir" "$BTFHUB_CACHE_DIR/btfhub-archive/"
+  done
 }
 
 btfgen() {
@@ -58,18 +73,15 @@ btfgen() {
  
   dir=$(pwd)
 
-  find $BTFHUB_CACHE_DIR -name "*.tar.xz" | \
+  find $BTFHUB_CACHE_DIR -name "*.tar.xz" -not -path "$BTFHUB_CACHE_DIR/btfhub-archive-repos/*" | \
   xargs -P 8 -I fileName sh -c 'tar xfJ "fileName" -C "$(dirname "fileName")"'
-  find $BTFHUB_CACHE_DIR -name "*.btf" | \
+  find $BTFHUB_CACHE_DIR -name "*.btf" -not -path "$BTFHUB_CACHE_DIR/btfhub-archive-repos/*" | \
   xargs -P 8 -I fileName sh -c 'bpftool gen min_core_btf "fileName" "fileName" '$file''
 
   if [ -n "$json" ]; then cp $json $BTFHUB_CACHE_DIR; fi
 
   cd $BTFHUB_CACHE_DIR && tar \
-    --exclude="./btfhub-archive/LICENSE" \
-    --exclude="./btfhub-archive/README.md" \
-    --exclude="./btfhub-archive/.gitignore" \
-    --exclude="./btfhub-archive/.git" \
+    --exclude="./btfhub-archive-repos" \
     --exclude="*.xz" \
     -czf $dir/$output .
 }
