@@ -9,7 +9,7 @@ usage() {
 	  ${script_name} [-h|--help]
 	    print this help message
 
-	  ${script_name} [btfgen] [OPTIONS] BPF[.o]
+	  ${script_name} [btfgen] [OPTIONS] BPF.o [BPF.o...]
       Create reduced version of BTF files to be embedded within the tools executables
 
 	  ${script_name} [fetch]
@@ -58,14 +58,15 @@ btfgen() {
 		|| return 1
 	eval set -- "$TEMP";
 
-	local json file output
+	local json files output
 	while [[ ${1:0:1} == - ]]; do
-		[[ $1 =~ ^-f|--|--file$ ]] && {
+		[[ $1 =~ ^-f|--file$ ]] && {
 			shift 1;
-			if [ -n "$1" ]; then file="$1"; shift 1; continue; fi
+			if [ -n "$1" ]; then files+=("$1"); shift 1; continue; fi
 		};
 		[[ $1 =~ ^-j|--json$ ]]    && { json="$2"; shift 2; continue; };
 		[[ $1 =~ ^-o|--output$ ]]    && { output="$2"; shift 2; continue; };
+		[[ $1 == -- ]]    && { shift 1; files+=("$@"); break; };
 		break;
 	done
 
@@ -76,7 +77,7 @@ btfgen() {
   find $BTFHUB_CACHE_DIR -name "*.tar.xz" -not -path "$BTFHUB_CACHE_DIR/btfhub-archive-repos/*" | \
   xargs -P 8 -I fileName sh -c 'tar xfJ "fileName" -C "$(dirname "fileName")"'
   find $BTFHUB_CACHE_DIR -name "*.btf" -not -path "$BTFHUB_CACHE_DIR/btfhub-archive-repos/*" | \
-  xargs -P 8 -I fileName sh -c 'bpftool gen min_core_btf "fileName" "fileName" '$file''
+  xargs -P 8 -I fileName sh -c 'bpftool gen min_core_btf "fileName" "fileName" "$@"' _ "${files[@]}"
 
   if [ -n "$json" ]; then cp $json $BTFHUB_CACHE_DIR; fi
 
