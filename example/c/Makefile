@@ -124,7 +124,7 @@ $(APPS): %: $(OUTPUT)/%.o $(OUTPUT)/%-btf.tar.gz $(LIBBPF_OBJ) $(OUTPUT)/libbpf_
 	$(call msg,LD,$(OUTPUT)/min_core_btf_tar.o)
 	cd $(OUTPUT) && ld -r -b binary min_core_btfs.tar.gz -o min_core_btf_tar.o
 	$(call msg,BINARY,$@)
-	$(Q)$(CC) $(CFLAGS) $< $(LIBBPF_OBJ) $(OUTPUT)/libbpf_compatible.a $(OUTPUT)/min_core_btf_tar.o $(ALL_LDFLAGS) -lelf -lz -o $@ -static
+	$(Q)$(CC) $(CFLAGS) $< $(LIBBPF_OBJ) $(OUTPUT)/libbpf_compatible.a $(OUTPUT)/min_core_btf_tar.o $(ALL_LDFLAGS) -lelf -lz -lzstd -o $@ -static
 
 $(OUTPUT)/libbpf_compatible.a:
 	make -C ../../bpf-compatible-sys
